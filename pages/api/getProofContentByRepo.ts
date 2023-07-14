@@ -17,6 +17,15 @@ interface LangFramework {
   }[];
 }
 
+/**
+ * @swagger
+ * /api/getProofContentByRepo:
+ *   post:
+ *     description: Returns the hello world
+ *     responses:
+ *       200:
+ *         description: hello world
+ */
 const getProofContentByRepo = async (
   req: NextApiRequest,
   res: NextApiResponse,
