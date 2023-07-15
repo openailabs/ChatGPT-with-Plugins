@@ -6,7 +6,7 @@
   "description_for_model": "Chat with repo",
   "api": {
     "type": "openapi",
-    "url": "http://localhost:3000/swagger.json",
+    "url": "http://localhost:3000/.well-known/openai.yaml",
     "has_user_authentication": false
   },
   "auth": { "type": "none" },

@@ -1,15 +1,22 @@
 import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
 import { OpenAIError, OpenAIFunctionCall } from '@/utils/server';
 
+
+
 import { ChatBody, Message } from '@/types/chat';
-import { PluginApiOperationList, getPluginApiOperationsFromUrl, getOpenAIFunctionFromPluginApiOperation } from '@/types/plugin';
 import { OpenAIFunctionList } from '@/types/openai';
+import { PluginApiOperationList, getOpenAIFunctionFromPluginApiOperation, getPluginApiOperationsFromUrl } from '@/types/plugin';
+
+
 
 // @ts-expect-error
 import wasm from '../../node_modules/@dqbd/tiktoken/lite/tiktoken_bg.wasm?module';
 
+
+
 import tiktokenModel from '@dqbd/tiktoken/encoders/cl100k_base.json';
 import { Tiktoken, init } from '@dqbd/tiktoken/lite/init';
+
 
 export const config = {
   runtime: 'edge',
@@ -30,9 +37,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     for (const key in operations) {
       if (operations.hasOwnProperty(key)) {
+        console.log(key)
         const operation = operations[key];
         const func = getOpenAIFunctionFromPluginApiOperation(operation);
         functions[operation.operationId] = func;
+        console.log(functions);
       }
     }
 
