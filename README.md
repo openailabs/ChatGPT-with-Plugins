@@ -127,3 +127,7 @@ curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type
 ```bash
 curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"vlucas","repo":"phpdotenv"}}'  | jq
 ```
+
+```bash
+curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"peterw","repo":"Chat-with-Github-Repo"}}'  | jq
+```
