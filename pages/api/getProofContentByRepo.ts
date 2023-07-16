@@ -3,160 +3,166 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest';
-import { parse } from 'url';
+import NodeCache from 'node-cache';
 
+
+const includedFileMatchPattern: any =
+  process.env.INCLUDED_FILE_MATCH_PATTERN || '\.env.*';
+
+const dmfTtl: Number = new Number(process.env.DMF_TTL) || 24 * 60 * 60; // cache for 24 Hours
+
+const fileDownloadLimitSize: any = new Number(process.env.FILE_DOWNLOAD_LIMIT_SIZE) || 40000; 
+
+const dmfCache = new NodeCache({ stdTTL: dmfTtl as number }); 
 
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+const dmfUrl: string =
+  process.env.DMF_URL ||
+  'https://raw.githubusercontent.com/dmfos/dmf/main/dmfs.json';
 
-interface LangFramework {
+interface Framework {
+  name: string;
+  dmf: string;
+  extra: string[];
+}
+
+interface DMF {
   language: string;
-  framework: {
-    name: string;
-    dmf: string;
-    extra: string[];
-  }[];
+  frameworks: Framework[];
 }
 
-let dmf:any= null
-
-const getDmf=async function(){
-  if(!dmf){
-    const response = await fetch(
-      'https://raw.githubusercontents.com/dmfos/dmf/main/dmf.json',
-      );
-      const langFrameworks: LangFramework[] = await response.json();
-      dmf=langFrameworks
-      return langFrameworks;
-    }else{
-      return dmf;
-    }
+export interface TLF {
+  type: string;
+  size: number;
+  name: string;
+  download_url: string;
 }
-/**
- * @swagger
- * /api/getProofContentByRepo:
- *   post:
- *     description: Returns the hello world
- *     responses:
- *       200:
- *         description: hello world
- */
-const getProofContentByRepo = async (
-  req: NextApiRequest,
-  res: NextApiResponse,
-) => {
-  //curl -X POST -H "Content-Type: application/json" -d '{"url": "https://github.com/angular/angular/tree/master/angular_router"}' http://localhost:3000/api/getProofContentByRepo
-  // const url = req.body.url;
-  // const parsedUrl = parse(url);
-  // const [owner, repo] = (parsedUrl.pathname?.split('/').filter(Boolean) ||[]) as [string, string];
-  // // const [owner, repo] = req.body;
-  // console.log(owner)
-  // console.log(repo)
 
+export interface ContentItem {
+  name: string;
+  content: string;
+}
 
-    if (req.method === 'POST') {
-      try {
-        const { octokitMethod, args } = req.body;
+export interface TlfType {
+  files: string[];
+  folders: string[];
+}
+export interface Result {
+  tlf: TlfType;
+  contents: ContentItem[];
+}
 
-        console.log(octokitMethod);
-        console.log(args);
-
-        let argsJson = args;
-
-        // {
-        // "octokitMethod": "repos.get",
-        // "args": {
-        //   "repo": "NiuXiangQian/chatgpt-stream"
-        // }
-
-        const owner = argsJson.owner;
-        const repo = argsJson.repo;
-
-        // const response = await fetch(
-        //   'https://raw.githubusercontents.com/dmfos/dmf/main/dmf.json',
-        // );
-        // const langFrameworks: LangFramework[] = await getDmf();
-        const tlf = await octokit.repos.getContent({ owner, repo });
-        console.log('tlf');
-        console.log(tlf);
-
-        let files: string[] = [];
-        let folders: string[] = [];
-
-        tlf.data.forEach(
-          async (
-            file: RestEndpointMethodTypes['repos']['getContent']['response']['data'],
-          ) => {
-            if (file.type === 'file') {
-              // const langFrameworks: LangFramework[] = await getDmf();
-              const langFrameworks: LangFramework[] = [
-                {
-                  language: 'TypeScript',
-                  framework: [
-                    {
-                      name: 'npm',
-                      dmf: 'package.json',
-                      extra: ['package-lock.json'],
-                    },
-                    {
-                      name: 'yarn',
-                      dmf: 'package.json',
-                      extra: ['yarn.lock'],
-                    },
-                  ],
-                },
-              ];
-              
-              console.log(langFrameworks);
-              for (let lang of langFrameworks) {
-                for (let framework of lang.framework) {
-                  if (
-                    (framework.dmf.includes('*') &&
-                      file.name.endsWith(framework.dmf.split('*')[1])) ||
-                    file.name === framework.dmf
-                  ) {
-                    files.push(file.name);
-                  }
-                }
-              }
-            } else if (file.type === 'dir') {
-              folders.push(file.name);
-            }
-          },
-        );
-
-        let contents: { [key: string]: string } = {};
-
-        await Promise.all(
-          files.map(async (file: string) => {
-            console.log(file);
-            const content = await octokit.repos.getContent({
-              owner,
-              repo,
-              path: `/${file}`,
-            });
-
-            if (content.data.size < 40000) {
-              const buff = Buffer.from(content.data.content, 'base64');
-              const text = buff.toString('utf-8');
-              contents[file] = text;
-            }
-          }),
-        );
-
-        res.status(200).json({
-          tlf: [...files, ...folders],
-          dmfcontents: contents,
-        });
-      } catch (error: unknown) {
-        console.log(error);
-        res.status(400).json({ error: (error as Error).message });
-      }
-    } else {
-      // Handle any other HTTP method
-      res.setHeader('Allow', ['POST']);
-      res.status(405).json({ error: `Method ${req.method} is not allowed` });
-    }
-
+export const fetchDMFs = async (): Promise<DMF[]> => {
+  const response = await fetch(dmfUrl);
+  const dmfs: DMF[] = await response.json();
+  return dmfs;
 };
 
-export default getProofContentByRepo;
+export const fetchDMFsCached = async (): Promise<DMF[]> => {
+  const cacheKey = 'dmfs';
+  let dmfs = dmfCache.get<DMF[]>(cacheKey);
+
+  if (!dmfs) {
+    // console.log('Fetching dmfs...');
+    dmfs = await fetchDMFs();
+    dmfCache.set(cacheKey, dmfs);
+  } else {
+    // console.log('Cached dmfs...');
+  }
+
+  return dmfs;
+};
+export const fetchTLF = async (
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+): Promise<TLF[]> => {
+  const result = await octokit.request('GET /repos/{owner}/{repo}/contents', {
+    owner,
+    repo,
+  });
+  return result.data;
+};
+
+export const fetchFileContent = async (
+  downloadUrl: string,
+): Promise<string> => {
+  const response = await fetch(downloadUrl);
+  const content = await response.text();
+  return content;
+};
+
+export const isDMF = (file: TLF, dmfs: DMF[]): boolean => {
+  for (const dmf of dmfs) {
+    for (const framework of dmf.frameworks) {
+      if (framework.dmf === file.name) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+
+function matchFiles(filename: string): boolean {
+  const regex = new RegExp(includedFileMatchPattern);
+  const result: boolean = regex.test(filename);
+  // console.log('Matched: ', result, filename);
+  return result;
+}
+
+export default async function getProofContentByRepo(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  if (req.method === 'POST') {
+    const { args } = req.body;
+    const owner: string = args.owner;
+    const repo = args.repo;
+
+    const dmfs = await fetchDMFsCached();
+
+    const tlfData = await fetchTLF(octokit, owner, repo);
+    const tlf: string[] = [];
+    const files: string[] = [];
+    const folders: string[] = [];
+    const contentPromises: Promise<ContentItem>[] = [];
+
+    tlfData.forEach((file: TLF) => {
+      if (file.type === 'file') {
+        files.push(file.name);
+      }
+      if (file.type === 'dir') {
+        folders.push(file.name);
+      }
+
+      if (
+        (file.type === 'file' &&
+          file.size < fileDownloadLimitSize &&
+          isDMF(file, dmfs)) ||
+        matchFiles(file.name)
+      ) {
+        contentPromises.push(
+          fetchFileContent(file.download_url).then((content) => ({
+            name: file.name,
+            content,
+          })),
+        );
+      }
+    });
+
+    const contents = await Promise.all(contentPromises);
+    const result: Result = {
+      tlf: { folders: folders, files: files},
+      contents,
+    };
+
+    res.status(200).json(result);
+  } else {
+    res.status(405).end('Method Not Allowed');
+  }
+}
+// curl http://localhost:3000/api/getProofContentByRepo  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"facebook","repo":"react"}}'  | jq
+// curl http://localhost:3000/api/getProofContentByRepo  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"anyenv","repo":"anyenv"}}'  | jq
+// curl http://localhost:3000/api/getProofContentByRepo  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"different-ai","repo":"chat-gpt-github"}}'  | jq
+// curl http://localhost:3000/api/getProofContentByRepo  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"danny-avila","repo":"LibreChat"}}'  | jq

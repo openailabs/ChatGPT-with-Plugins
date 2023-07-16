@@ -1,15 +1,16 @@
 import { Message } from '@/types/chat';
 import { OpenAIModel } from '@/types/openai';
-import { PluginApiOperationList, runPluginApiOperation } from '@/types/plugin';
 import { OpenAIFunctionList } from '@/types/openai';
+import { PluginApiOperationList, runPluginApiOperation } from '@/types/plugin';
+
+
 
 import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION } from '../app/const';
 
-import {
-  ParsedEvent,
-  ReconnectInterval,
-  createParser,
-} from 'eventsource-parser';
+
+
+import { ParsedEvent, ReconnectInterval, createParser } from 'eventsource-parser';
+
 
 export class OpenAIError extends Error {
   type: string;
@@ -128,12 +129,15 @@ export const OpenAIFunctionCall = async (
   operations: PluginApiOperationList,
 ) => {
   let url = `${OPENAI_API_HOST}/v1/chat/completions`;
+  // console.log("Url: ",url)
+  // console.log('Key: ', key);
+  // console.log('Key: ', process.env.OPENAI_API_KEY);
   // TODO: Exception handling for Other models
   const modelId = model.id;
-  let res = await fetch(url, {
+  const payload = {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${key ? key : process.env.OPENAI_API_KEY}`
+      Authorization: `Bearer ${key ? key : process.env.OPENAI_API_KEY}`,
     },
     method: 'POST',
     body: JSON.stringify({
@@ -149,12 +153,18 @@ export const OpenAIFunctionCall = async (
       functions: Object.values(functions),
       function_call: 'auto',
     }),
-  });
+  };
+
+  // console.log("Function call payload: ",JSON.stringify(payload).slice(1,300),"...")
+  // console.log("Function call payload: ",payload)
+  let res = await fetch(url, payload);
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
+  // console.log("Status: ",res.status)
   if (res.status !== 200) {
+
     const result = await res.json();
     if (result.error) {
       throw new OpenAIError(
@@ -173,7 +183,7 @@ export const OpenAIFunctionCall = async (
   }
 
   const data = await res.json();
-
+  // console.log('Data: ', data);
   let secondMessages = [
     {
       role: 'system',
@@ -187,10 +197,16 @@ export const OpenAIFunctionCall = async (
   if ('function_call' in message) {
     const function_name = message.function_call.name;
     const operation = operations[function_name];
+    // console.log("Operation: ",operation)
 
     if (operation) {
+      // console.log(
+      //   'Before runPluginApiOperation: ',
+      //   message.function_call.arguments,
+      // );
       const result = await runPluginApiOperation(operation, message.function_call.arguments);
       response_from_plugin = JSON.stringify(result);
+      // console.log('runPluginApiOperation result: ', response_from_plugin.slice(200));
     }
 
     secondMessages = [

@@ -32,16 +32,17 @@ const handler = async (req: Request): Promise<Response> => {
 
     for (const pluginUrl of pluginUrlList) {
       const ops = await getPluginApiOperationsFromUrl(pluginUrl);
+      //console.log("Plugin url: ",pluginUrl)
       operations = { ...operations, ...ops } as PluginApiOperationList;
     }
 
     for (const key in operations) {
       if (operations.hasOwnProperty(key)) {
-        console.log(key)
+        //console.log("Key: "+key)
         const operation = operations[key];
         const func = getOpenAIFunctionFromPluginApiOperation(operation);
         functions[operation.operationId] = func;
-        console.log(functions);
+        //console.log("Functions: "+JSON.stringify(functions));
       }
     }
 
@@ -77,9 +78,9 @@ const handler = async (req: Request): Promise<Response> => {
       tokenCount += tokens.length;
       messagesToSend = [message, ...messagesToSend];
     }
-
+    //console.log('Before OpenAIFunctionCall');
     encoding.free();
-
+    
     const stream = await OpenAIFunctionCall(
       model,
       promptToSend,
@@ -88,11 +89,12 @@ const handler = async (req: Request): Promise<Response> => {
       messagesToSend,
       functions,
       operations,
-    );
-
-    return new Response(stream);
-  } catch (error) {
-    console.error(error);
+      );
+      
+      //console.log('After OpenAIFunctionCall');
+      return new Response(stream);
+    } catch (error) {
+      console.error(error);
     if (error instanceof OpenAIError) {
       return new Response('Error', { status: 500, statusText: error.message });
     } else {

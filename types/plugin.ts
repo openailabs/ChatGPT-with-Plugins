@@ -279,6 +279,7 @@ export const runPluginApiOperation = async (
   args: string,
 ) => {
   let query: { [key: string]: string } = {};
+  // console.log("Query: ",query)
   if (operation.parameters) {
     for (const parameter of operation.parameters) {
       if (parameter.in === 'path' && args.includes(parameter.name)) {
@@ -309,36 +310,50 @@ export const runPluginApiOperation = async (
   } else {
     body = undefined;
   }
-
+  // console.log("Body: ",body)
+  //console.log("Query: ",query)
   let url = operation.serverUrl + operation.apiPath;
   if (query) {
     url = url + '?' + new URLSearchParams(query).toString();
   }
 
-  const response = await fetch(url, {
+  //console.log("URL: ",url)
+  const payload = {
     headers: {
       'Content-Type': 'application/json',
     },
     method: operation.method,
     body: body,
-  });
-
+  };
+  //console.log("Payload: ",payload)
+  let response:any=null
+  try{
+  response = await fetch(url, payload);
+  //console.log('Status: ', response.status);
   if (operation.responses) {
     for (const key in operation.responses) {
       if (response.status === parseInt(key)) {
         if (operation.responses[key].content) {
           const data = await response.json();
+          //console.log("Data: ",data)
           return data;
         } else {
+          //console.log('Data: ', response.statusText);
           return response.statusText;
         }
       }
     }
   }
+} catch (err) {
+    console.log(err)
+  }
+
   try {
     const data = await response.json();
+    //console.log("Data: ",data)
     return data;
   } catch (err) {
+    console.log(err)
     return response.statusText;
   }
 };
