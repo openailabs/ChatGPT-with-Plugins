@@ -1,19 +1,17 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-
-
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest';
 import NodeCache from 'node-cache';
 
-
 const includedFileMatchPattern: any =
-  process.env.INCLUDED_FILE_MATCH_PATTERN || '\.env.*';
+  process.env.INCLUDED_FILE_MATCH_PATTERN || '.env.*';
 
 const dmfTtl: Number = new Number(process.env.DMF_TTL) || 24 * 60 * 60; // cache for 24 Hours
 
-const fileDownloadLimitSize: any = new Number(process.env.FILE_DOWNLOAD_LIMIT_SIZE) || 40000; 
+const fileDownloadLimitSize: any =
+  new Number(process.env.FILE_DOWNLOAD_LIMIT_SIZE) || 40000;
 
-const dmfCache = new NodeCache({ stdTTL: dmfTtl as number }); 
+const dmfCache = new NodeCache({ stdTTL: dmfTtl as number });
 
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 const dmfUrl: string =
@@ -23,7 +21,7 @@ const dmfUrl: string =
 interface Framework {
   name: string;
   dmf: string;
-  extra: string[];
+  extras: string[];
 }
 
 interface DMF {
@@ -63,11 +61,9 @@ export const fetchDMFsCached = async (): Promise<DMF[]> => {
   let dmfs = dmfCache.get<DMF[]>(cacheKey);
 
   if (!dmfs) {
-    // console.log('Fetching dmfs...');
     dmfs = await fetchDMFs();
     dmfCache.set(cacheKey, dmfs);
   } else {
-    // console.log('Cached dmfs...');
   }
 
   return dmfs;
@@ -103,11 +99,9 @@ export const isDMF = (file: TLF, dmfs: DMF[]): boolean => {
   return false;
 };
 
-
 function matchFiles(filename: string): boolean {
   const regex = new RegExp(includedFileMatchPattern);
   const result: boolean = regex.test(filename);
-  // console.log('Matched: ', result, filename);
   return result;
 }
 
@@ -153,7 +147,7 @@ export default async function getProjectDetail(
 
     const contents = await Promise.all(contentPromises);
     const result: Result = {
-      tlf: { folders: folders, files: files},
+      tlf: { folders: folders, files: files },
       contents,
     };
 
