@@ -111,7 +111,7 @@ function matchFiles(filename: string): boolean {
   return result;
 }
 
-export default async function getProofContentByRepo(
+export default async function getProjectDetail(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
@@ -162,7 +162,3 @@ export default async function getProofContentByRepo(
     res.status(405).end('Method Not Allowed');
   }
 }
-// curl http://localhost:3000/api/getProofContentByRepo  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"facebook","repo":"react"}}'  | jq
-// curl http://localhost:3000/api/getProofContentByRepo  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"anyenv","repo":"anyenv"}}'  | jq
-// curl http://localhost:3000/api/getProofContentByRepo  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"different-ai","repo":"chat-gpt-github"}}'  | jq
-// curl http://localhost:3000/api/getProofContentByRepo  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"danny-avila","repo":"LibreChat"}}'  | jq

@@ -2,23 +2,23 @@
 
 ChatGPT with Plugins is an open source chat UI with plugins access. It utilizes the chatbot-ui as the base UI.
 
-Test it with your OpenAI API key at: https://chat-gpt-with-plugins.vercel.app/
+Test it with your OpenAI API key at: <https://chat-gpt-with-plugins.vercel.app/>
 
+If you don't have access to the OpenAI API, you can test it for free using the ai4all API here: <https://ai-4-all.vercel.app>
 
-If you don't have access to the OpenAI API, you can test it for free using the ai4all API here: https://ai-4-all.vercel.app
+Get you ai4all API key here: <https://ai4all.saq1bb.repl.co>
 
-Get you ai4all API key here: https://ai4all.saq1bb.repl.co
+## Plugins Demo
 
-## Plugins Demo:
 ![demo](https://user-images.githubusercontent.com/48133047/246844909-ca71c866-5c9b-4795-b019-8998d3b43220.gif)
 
-## Example Plugins to try:
+## Example Plugins to try
 
 ```https://websearch.plugsugar.com/.well-known/ai-plugin.json```
 
 ```https://www.accesslinks.ai/.well-known/ai-plugin.json```
 
-## Note:
+## Note
 
 > Currently, the only plugin url form it can handle is the one that ends with ```/.well-known/ai-plugin.json``` and does not require authentication.
 
@@ -63,7 +63,7 @@ Create a .env.local file in the root of the repo with your API Key:
 OPENAI_API_KEY=YOUR_KEY
 ```
 
-> You can set another OpenAI Host by modifying ```main/utils/app/const.ts```. By default, it is set to 'https://api.openai.com'.
+> You can set another OpenAI Host by modifying ```main/utils/app/const.ts```. By default, it is set to '<https://api.openai.com>'.
 
 > Additionally, if you have multiple OpenAI Organizations, you can set `OPENAI_ORGANIZATION` to specify one.
 
@@ -102,6 +102,28 @@ If you don't have an OpenAI API key, you can get one [here](https://platform.ope
 
 This project has been made possible by:
 
-> https://github.com/mckaywrigley/chatbot-ui For the base UI of the project.
+> <https://github.com/mckaywrigley/chatbot-ui> For the base UI of the project.
 
-> https://github.com/devnjw For the plugin implementation and functionality.
+> <https://github.com/devnjw> For the plugin implementation and functionality.
+
+## Debugging
+
+```bash
+curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"facebook","repo":"react"}}'  | jq
+```
+
+```bash
+curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"anyenv","repo":"anyenv"}}'  | jq
+```
+
+```bash
+curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"different-ai","repo":"chat-gpt-github"}}'  | jq
+```
+
+```bash
+curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"danny-avila","repo":"LibreChat"}}'  | jq
+```
+
+```bash
+curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"vlucas","repo":"phpdotenv"}}'  | jq
+```
