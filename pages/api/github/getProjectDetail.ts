@@ -1,8 +1,12 @@
 // Importing required modules and dependencies
 import { NextApiRequest, NextApiResponse } from 'next';
+import NextCors from 'nextjs-cors';
+
+
 
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest';
 import NodeCache from 'node-cache';
+
 
 // Define configuration parameters
 const includedFileMatchPattern: any =
@@ -114,8 +118,19 @@ export default async function getProjectDetail(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  if (req.method === 'POST') {
-    const { args } = req.body;
+  if (req.method === 'POST' || req.method === 'GET') {
+    // await NextCors(req, res, {
+    //   // Options
+    //   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    //   origin: '*',
+    //   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+    // });
+
+    let { args } = req.body;
+    if (!args) {
+      const payload = { owner: 'LTopx', repo: 'L-GPT' };
+      args = payload;
+    }
     const owner: string = args.owner;
     const repo = args.repo;
     const dmfs = await fetchDMFsCached();

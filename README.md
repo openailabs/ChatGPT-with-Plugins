@@ -131,3 +131,19 @@ curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type
 ```bash
 curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"peterw","repo":"Chat-with-Github-Repo"}}'  | jq
 ```
+
+```bash
+curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"hypertrons","repo":"hypertrons-crx"}}'  | jq
+```
+
+```bash
+curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"meilisearch","repo":"meilisearch"}}'  | jq
+```
+
+```bash
+curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"Significant-Gravitas","repo":"Auto-GPT"}}'  | jq
+```
+
+```bash
+curl -i http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"LTopx","repo":"L-GPT"}}'  | jq
+```
