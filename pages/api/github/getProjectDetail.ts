@@ -2,8 +2,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import NextCors from 'nextjs-cors';
 
-
-
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest';
 import { request } from 'http';
 import { HttpProxyAgent } from 'http-proxy-agent';
@@ -11,9 +9,7 @@ import NodeCache from 'node-cache';
 import fetch from 'node-fetch';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 
-
 // import node-fetch
-
 
 // Define configuration parameters
 const includedFileMatchPattern: any =
@@ -82,7 +78,6 @@ const agent = new HttpProxyAgent(
   'http://localhost:7890',
 );
 
-
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
   // request: { agent, fetch },
@@ -94,15 +89,11 @@ export const fetchTLF = async (
   owner: string,
   repo: string,
 ): Promise<TLF[]> => {
-  	
-    
-  const result = await octokit.request(
-    'GET /repos/{owner}/{repo}/contents',
-    {
-      owner,
-      repo,
-    },
-  );
+  const result = await octokit.request(`GET /repos/{owner}/{repo}/contents`, {
+    owner,
+    repo,
+  });
+
   return result.data;
 };
 // Function to fetch file content
@@ -151,22 +142,18 @@ export default async function getProjectDetail(
       optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
     });
 
-    let args = req.body;
-    if (!args) {
-      const payload = { owner: 'LTopx', repo: 'L-GPT' };
-      args = payload;
-    }
+    const response = JSON.parse(req.body);
 
-    const owner: string = args.owner;
-    const repo = args.repo;
+    const owner: string = response?.owner || 'LTopx';
+    const repo: string = response?.repo || 'L-GPT';
 
-    console.log('Request body: ', owner, repo);
     // https://api.github.com/repos///contents
     // https://api.github.com/repos/LTopx/L-GPT/contents
 
     const dmfs = await fetchDMFsCached();
 
     const tlfData = await fetchTLF(octokit, owner, repo);
+
     const tlf: string[] = [];
     const files: string[] = [];
     const folders: string[] = [];
@@ -198,7 +185,7 @@ export default async function getProjectDetail(
     });
     const contents = await Promise.all(contentPromises);
     // Prepare the result
-    
+
     const result: Result = {
       tlf: { folders: folders, files: files },
       contents,
