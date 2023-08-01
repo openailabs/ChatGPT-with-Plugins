@@ -5,7 +5,14 @@ import NextCors from 'nextjs-cors';
 
 
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest';
+import { request } from 'http';
+import { HttpProxyAgent } from 'http-proxy-agent';
 import NodeCache from 'node-cache';
+import fetch from 'node-fetch';
+import { SocksProxyAgent } from 'socks-proxy-agent';
+
+
+// import node-fetch
 
 
 // Define configuration parameters
@@ -15,10 +22,11 @@ const dmfTtl: Number = new Number(process.env.DMF_TTL) || 24 * 60 * 60; // cache
 const fileDownloadLimitSize: any =
   new Number(process.env.FILE_DOWNLOAD_LIMIT_SIZE) || 40000;
 const dmfCache = new NodeCache({ stdTTL: dmfTtl as number });
-const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+
 const dmfUrl: string =
   process.env.DMF_URL ||
-  'https://raw.githubusercontent.com/dmfos/dmf/main/dmfs.json';
+  // 'https://raw.githubusercontents.com/dmfos/dmf/main/dmfs.json';
+  'https://raw.gitmirror.com/dmfos/dmf/main/dmfs.json';
 // Define interface for Framework
 interface Framework {
   name: string;
@@ -68,16 +76,33 @@ export const fetchDMFsCached = async (): Promise<DMF[]> => {
   }
   return dmfs;
 };
+
+const agent = new HttpProxyAgent(
+  /* credentials */
+  'http://localhost:7890',
+);
+
+
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN,
+  // request: { agent, fetch },
+});
+
 // Function to fetch TLF
 export const fetchTLF = async (
   octokit: Octokit,
   owner: string,
   repo: string,
 ): Promise<TLF[]> => {
-  const result = await octokit.request('GET /repos/{owner}/{repo}/contents', {
-    owner,
-    repo,
-  });
+  	
+    
+  const result = await octokit.request(
+    'GET /repos/{owner}/{repo}/contents',
+    {
+      owner,
+      repo,
+    },
+  );
   return result.data;
 };
 // Function to fetch file content
@@ -119,21 +144,28 @@ export default async function getProjectDetail(
   res: NextApiResponse,
 ) {
   if (req.method === 'POST' || req.method === 'GET') {
-    // await NextCors(req, res, {
-    //   // Options
-    //   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-    //   origin: '*',
-    //   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-    // });
+    await NextCors(req, res, {
+      // Options
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+      origin: '*',
+      optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+    });
 
-    let { args } = req.body;
+    let args = req.body;
     if (!args) {
       const payload = { owner: 'LTopx', repo: 'L-GPT' };
       args = payload;
     }
+
     const owner: string = args.owner;
     const repo = args.repo;
+
+    console.log('Request body: ', owner, repo);
+    // https://api.github.com/repos///contents
+    // https://api.github.com/repos/LTopx/L-GPT/contents
+
     const dmfs = await fetchDMFsCached();
+
     const tlfData = await fetchTLF(octokit, owner, repo);
     const tlf: string[] = [];
     const files: string[] = [];
@@ -154,8 +186,10 @@ export default async function getProjectDetail(
           isDMF(file, dmfs)) ||
         matchFiles(file.name)
       ) {
+        let url = file.download_url;
+        url = url.replace('githubusercontent.com', 'gitmirror.com');
         contentPromises.push(
-          fetchFileContent(file.download_url).then((content) => ({
+          fetchFileContent(url).then((content) => ({
             name: file.name,
             content,
           })),
@@ -164,6 +198,7 @@ export default async function getProjectDetail(
     });
     const contents = await Promise.all(contentPromises);
     // Prepare the result
+    
     const result: Result = {
       tlf: { folders: folders, files: files },
       contents,

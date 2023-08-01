@@ -145,5 +145,5 @@ curl http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type
 ```
 
 ```bash
-curl -i http://localhost:3000/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"LTopx","repo":"L-GPT"}}'  | jq
+curl http://localhost:4012/api/github/getProjectDetail  -X POST -H "Content-Type: application/json" -d '{"args": {"owner":"LTopx","repo":"L-GPT"}}' | jq
 ```
